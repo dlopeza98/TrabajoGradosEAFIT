@@ -1,0 +1,41 @@
+{
+  "os":  "Linux-5.15.153.1-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+  "python":  "3.12.6",
+  "startedAt":  "2024-10-23T03:16:53.988081Z",
+  "program":  "/home/dalopeza/TrabajoGradosEAFIT/src/trabajogradoseafit/notebooks/meta-llama-3.1-8B-transferlearning.ipynb",
+  "git":  {
+    "remote":  "git@github.com:dlopeza98/TrabajoGradosEAFIT.git",
+    "commit":  "29fb7e285363b1b93b68341324ece2ac9cf139cf"
+  },
+  "email":  "david.lopeza98@gmail.com",
+  "root":  "/home/dalopeza/TrabajoGradosEAFIT/src/trabajogradoseafit/notebooks",
+  "host":  "DESKTOP-URLSG0S",
+  "username":  "dalopeza",
+  "executable":  "/home/dalopeza/TrabajoGradosEAFIT/.venv/bin/python",
+  "codePathLocal":  "meta-llama-3.1-8B-transferlearning.ipynb",
+  "cpu_count":  8,
+  "cpu_count_logical":  16,
+  "gpu":  "NVIDIA GeForce RTX 4050 Laptop GPU",
+  "gpu_count":  1,
+  "disk":  {
+    "/":  {
+      "total":  "1081101176832",
+      "used":  "85047189504"
+    }
+  },
+  "memory":  {
+    "total":  "18698563584"
+  },
+  "cpu":  {
+    "count":  8,
+    "countLogical":  16
+  },
+  "gpu_nvidia":  [
+    {
+      "name":  "NVIDIA GeForce RTX 4050 Laptop GPU",
+      "memoryTotal":  "6439305216",
+      "architecture":  "Ada"
+    }
+  ],
+  "cudaVersion":  "12.6"
+}
