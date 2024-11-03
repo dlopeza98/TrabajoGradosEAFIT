@@ -1,15 +1,14 @@
 # Libraries
 import base64
-import os
+import sqlite3
 
 import streamlit as st
-from dotenv import load_dotenv
 from openai import OpenAI
 
 # Load secrets and client configurations
-load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-fine_tuned_model_id = os.getenv("ID_MODEL_OPENAI")
+client = OpenAI(api_key=st.secrets.openai_credentials.OPENAI_API_KEY)
+fine_tuned_model_id = st.secrets.openai_credentials.ID_MODEL_OPENAI
+
 
 system_message = """
 You are an advanced assistant specialized in analyzing and detecting emotions in short text. 
@@ -89,72 +88,162 @@ emotion_emojis = {
 }
 
 
-def main():
-    # Load the logo and convert it to base64 for displaying
-    logo_url = "logo/DELTA-WITS-LOGO-WHITE.png"  # Replace with your logo file path
+# Login function
+def login():
+    logo_url = "logo/DELTA-WITS-LOGO-WHITE.png"
     try:
         with open(logo_url, "rb") as image_file:
             logo_base64 = base64.b64encode(image_file.read()).decode("utf-8")
+        st.markdown(
+            f"""
+            <div style="display: flex; justify-content: space-between; align-items: center; max-width: 700px; margin: auto; padding-top: 18px;">
+                <h1 style="margin: 0; font-size: 2.5em; font-weight: bold; color: white;">Login</h1>
+                <a href="https://www.deltawits.com" target="_blank">
+                    <img src="data:image/png;base64,{logo_base64}" style="width:200px;"/>
+                </a>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
     except FileNotFoundError:
         st.error("Logo image not found. Please check the file path.")
-        return
 
-    # Display header and clickable logo
-    st.markdown(
-        f"""
-        <div style="display: flex; justify-content: space-between; align-items: center; max-width: 700px; margin: auto; padding-top: 18px;">
-            <h1 style="margin: 0; font-size: 2.5em; font-weight: bold; color: white;">Janus</h1>
-            <a href="https://www.deltawits.com" target="_blank">
-                <img src="data:image/png;base64,{logo_base64}" style="width:200px;"/>
-            </a>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.write("Please enter your credentials to access the demo.")
 
-    # Description aligned with text box width, without the link icon
-    st.markdown(
-        """
-        <div style="max-width: 700px; margin: auto; color: white; font-size: 1.1em;">
-            Experience the power of AI with our LLM based demo app! Efficiently identify emotions in texts through seven distinct emotions: joy, fear, disgust, guilt, shame, sadness, and anger.
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    with st.form("login_form", clear_on_submit=True):
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        login_button = st.form_submit_button("Login")
 
-    # Central content area with class to control width
-    with st.container():
+    if login_button:
+        conn = sqlite3.connect("users.db")
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT password, uses_available, active FROM users WHERE username = ?",
+            (username,),
+        )
+        user_data = cursor.fetchone()
+        conn.close()
+
+        if user_data:
+            db_password, uses_available, active = user_data
+            if password == db_password and active == 1:
+                st.session_state["authenticated"] = True
+                st.session_state["remaining_queries"] = uses_available
+                st.session_state["username"] = username
+                st.success(f"Welcome, {username}!")
+                st.rerun()  # Automatically go to the demo page
+            elif active == 0:
+                st.error("You have no remaining uses in this accout.")
+            else:
+                st.error("Invalid username or password.")
+        else:
+            st.error("Invalid username or password.")
+
+
+# Main function
+def main():
+    if "authenticated" not in st.session_state:
+        st.session_state["authenticated"] = False
+
+    if not st.session_state["authenticated"]:
+        login()
+    else:
+        logo_url = "logo/DELTA-WITS-LOGO-WHITE.png"
+        try:
+            with open(logo_url, "rb") as image_file:
+                logo_base64 = base64.b64encode(image_file.read()).decode("utf-8")
+        except FileNotFoundError:
+            st.error("Logo image not found. Please check the file path.")
+            return
+
         st.markdown(
-            '<div style="max-width: 700px; margin: auto;">', unsafe_allow_html=True
+            f"""
+            <div style="display: flex; justify-content: space-between; align-items: center; max-width: 700px; margin: auto; padding-top: 10px;">
+                <h1 style="margin: 0; font-size: 2.5em; font-weight: bold; color: white;">Janus</h1>
+                <a href="https://www.deltawits.com" target="_blank">
+                    <img src="data:image/png;base64,{logo_base64}" style="width:200px;"/>
+                </a>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
 
-        # Create a form for user input
-        with st.form(key="emotion_form"):
-            user_input = st.text_area(
-                "Enter your text here:", placeholder="Insert text in English"
-            )
-            submit_button = st.form_submit_button(label="Analyze")
+        st.markdown(
+            """
+            <div style="max-width: 700px; margin: auto; color: white; font-size: 1.1em; margin-bottom: 15px;">
+                Experience the power of AI with our LLM based demo app! Efficiently identify emotions in texts through seven distinct emotions: joy, fear, disgust, guilt, shame, sadness, and anger.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-        if submit_button and user_input:
-            with st.spinner("Analyzing text..."):
-                try:
-                    response = detect_emotion(
-                        user_input, system_message, fine_tuned_model_id
+        if st.session_state["remaining_queries"] > 0:
+            with st.container():
+                with st.form(key="emotion_form"):
+                    # Text area for user input
+                    user_input = st.text_area(
+                        "Enter your text here:", placeholder="Insert text in English"
                     )
 
-                    # Get the emoji for the detected emotion
-                    emoji = emotion_emojis.get(response.lower(), "🔍")
-
-                    # Display result with consistent styling and label
-                    st.markdown("### Emotion Detected:")
-                    st.markdown(
-                        f"<div style='background-color: #333333; padding: 10px; border-radius: 10px; color: white; font-size: 20px; text-align: center;'>{emoji} {response.capitalize()}</div>",
+                    # Display remaining requests count inside the form
+                    remaining_requests_placeholder = st.empty()
+                    remaining_requests_placeholder.markdown(
+                        f"""
+                        <div style="text-align: right; color: gray; font-size: 0.9em;">
+                            Remaining requests: {st.session_state["remaining_queries"]}
+                        </div>
+                        """,
                         unsafe_allow_html=True,
                     )
-                except Exception as e:
-                    st.error(f"An error occurred: {e}")
 
-        st.markdown("</div>", unsafe_allow_html=True)  # Close main-content div
+                    # Submit button
+                    submit_button = st.form_submit_button(label="Analyze")
+
+                if submit_button and user_input:
+                    st.session_state["remaining_queries"] -= 1
+                    conn = sqlite3.connect("users.db")
+                    cursor = conn.cursor()
+                    cursor.execute(
+                        "UPDATE users SET uses_available = ?, active = ? WHERE username = ?",
+                        (
+                            st.session_state["remaining_queries"],
+                            1 if st.session_state["remaining_queries"] > 0 else 0,
+                            st.session_state["username"],
+                        ),
+                    )
+                    conn.commit()
+                    conn.close()
+
+                    with st.spinner("Analyzing text..."):
+                        try:
+                            response = detect_emotion(
+                                user_input, system_message, fine_tuned_model_id
+                            )
+                            emoji = emotion_emojis.get(response.lower(), "🔍")
+                            st.markdown("### Emotion Detected:")
+                            st.markdown(
+                                f"<div style='background-color: #333333; padding: 10px; border-radius: 10px; color: white; font-size: 20px; text-align: center;'>{emoji} {response.capitalize()}</div>",
+                                unsafe_allow_html=True,
+                            )
+
+                            # Update the remaining requests count inside the form after displaying the answer
+                            remaining_requests_placeholder.markdown(
+                                f"""
+                                <div style="text-align: right; color: gray; font-size: 0.9em; padding-right: 10px;">
+                                    Remaining requests: {st.session_state["remaining_queries"]}
+                                </div>
+                                """,
+                                unsafe_allow_html=True,
+                            )
+
+                        except Exception as e:
+                            st.error(f"An error occurred: {e}")
+
+        else:
+            st.warning(
+                "You have reached the maximum number of queries for this account."
+            )
 
 
 if __name__ == "__main__":
