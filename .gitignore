@@ -9,6 +9,8 @@ __pycache__/
 # Ignore models folder
 src/trabajogradoseafit/notebooks/models/
 
+src/trabajogradoseafit/app/.streamlit/secrets.toml
+
 # Distribution / packaging
 .Python
 build/

@@ -1,18 +1,17 @@
-[project]
+[tool.poetry]
 name = "TrabajoGradosEAFIT"
 version = "0.1.0"
 description = "Default template for PDM package"
-authors = [
-    {name = "dalopeza98", email = "david.lopeza98@gmail.com"},
-]
-dependencies = [
-    "streamlit>=1.39.0",
-    "openai>=1.53.0",
-]
-requires-python = "==3.10.*"
+authors = ["dalopeza98 <david.lopeza98@gmail.com>"]
+license = "MIT"
 readme = "README.md"
-license = {text = "MIT"}
+requires-python = "==3.10.*"
 
+[tool.poetry.dependencies]
+python = "==3.10.*"
+streamlit = ">=1.39.0"
+openai = ">=1.53.0"
 
-[tool.pdm]
-distribution = false
+[build-system]
+requires = ["pdm-backend>=0.12.0"]
+build-backend = "pdm.backend"
